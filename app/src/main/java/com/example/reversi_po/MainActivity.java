@@ -150,6 +150,29 @@ public class MainActivity extends AppCompatActivity {
                 printBoard();
                 current.setImageResource(blackPawn);
                 showPossibleMove();
+                timeLeft = timeLimit;
+                countDownTimer = new CountDownTimer(timeLeft, 1000) {
+                    @Override
+                    public void onTick(long millisUntilFinished) {
+                        timeLeft = millisUntilFinished;
+                        minutes = (int) (timeLeft / 1000) / 60;
+                        seconds = (int) (timeLeft / 1000) % 60;
+                        timeLeftFormat = String.format(Locale.getDefault(),"%02d:%02d", minutes, seconds);
+                        timeShow.setText(timeLeftFormat);
+                    }
+
+                    @Override
+                    public void onFinish() {
+                        Toast.makeText(MainActivity.this, R.string.no_time, Toast.LENGTH_LONG).show();
+                        fullLatency = 0;
+                        b.startGame();
+                        printBoard();
+                        current.setImageResource(blackPawn);
+                        showPossibleMove();
+                        timeLeft = timeLimit;
+                        countDownTimer.start();
+                    }
+                }.start();
             }
         });
     }
@@ -163,7 +186,6 @@ public class MainActivity extends AppCompatActivity {
         printBoard();
         current.setImageResource(blackPawn);
         showPossibleMove();
-        timeLeft = timeLimit;
         countDownTimer = new CountDownTimer(timeLeft, 1000) {
             @Override
             public void onTick(long millisUntilFinished) {
