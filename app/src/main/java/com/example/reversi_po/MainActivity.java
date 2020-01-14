@@ -32,7 +32,7 @@ public class MainActivity extends AppCompatActivity {
     private Button startGame;
     private Handler handler = new Handler();
     private static int fullLatency;
-    private static int singleLatency = 400;
+    private static int singleLatency = 200;
     private  String pawnDesign;
     int blackPawn;
     int whitePawn;
@@ -121,6 +121,7 @@ public class MainActivity extends AppCompatActivity {
                             if (b.getCurrentPlayer().getColor() == COLOR.BLACK) {
                                 chessAction(x, y);
                             }
+
                             if (b.getCurrentPlayer().getColor() == COLOR.WHITE) {
                                 int row = 0;
                                 int col = 0;
@@ -133,9 +134,9 @@ public class MainActivity extends AppCompatActivity {
                                         }
                                     }
                                 }
-                                chessAction(row, col);
-                                fullLatency = 0;
+                                aiAction(row, col);
                             }
+                            fullLatency = 0;
                         }
                     }
                 });
@@ -151,28 +152,7 @@ public class MainActivity extends AppCompatActivity {
                 current.setImageResource(blackPawn);
                 showPossibleMove();
                 timeLeft = timeLimit;
-                countDownTimer = new CountDownTimer(timeLeft, 1000) {
-                    @Override
-                    public void onTick(long millisUntilFinished) {
-                        timeLeft = millisUntilFinished;
-                        minutes = (int) (timeLeft / 1000) / 60;
-                        seconds = (int) (timeLeft / 1000) % 60;
-                        timeLeftFormat = String.format(Locale.getDefault(),"%02d:%02d", minutes, seconds);
-                        timeShow.setText(timeLeftFormat);
-                    }
-
-                    @Override
-                    public void onFinish() {
-                        Toast.makeText(MainActivity.this, R.string.no_time, Toast.LENGTH_LONG).show();
-                        fullLatency = 0;
-                        b.startGame();
-                        printBoard();
-                        current.setImageResource(blackPawn);
-                        showPossibleMove();
-                        timeLeft = timeLimit;
-                        countDownTimer.start();
-                    }
-                }.start();
+                countDownTimer.start();
             }
         });
     }
@@ -199,6 +179,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onFinish() {
                 Toast.makeText(MainActivity.this, R.string.no_time, Toast.LENGTH_LONG).show();
+                minutes = (int) (timeLeft / 1000) / 60;
+                seconds = (int) (timeLeft / 1000) % 60;
+                timeLeftFormat = String.format(Locale.getDefault(),"%02d:%02d", minutes, seconds);
+                timeShow.setText(timeLeftFormat);
                 fullLatency = 1;
             }
         }.start();
@@ -211,38 +195,6 @@ public class MainActivity extends AppCompatActivity {
                 // Flip chess
                 b.flip(row, col);
                 b.placeChess(row, col);
-                if (b.getCurrentPlayer().getColor() == COLOR.WHITE) {
-                    handler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            printBoard();
-
-                            // Change turn and check if the next player has possible move
-                            if (b.checkEnd() != 0) {
-                                b.nextTurn();
-                                buttonChange(current);
-
-                                if (!HasPossibleMove()) {
-                                    Toast.makeText(MainActivity.this, R.string.no_move, Toast.LENGTH_LONG).show();
-                                    b.nextTurn();
-                                    buttonChange(current);
-                                    if (!HasPossibleMove()) {
-                                        showWinMessage();
-                                        countDownTimer.cancel();
-                                    }
-                                }
-                            }
-
-                            // Show win message for the last play
-                            if (b.checkEnd() == 0) {
-                                showWinMessage();
-                                countDownTimer.cancel();
-
-                            }
-                            showPossibleMove();
-                        }
-                    }, fullLatency);
-                }
                 if (b.getCurrentPlayer().getColor() == COLOR.BLACK) {
                     printBoard();
 
@@ -268,12 +220,56 @@ public class MainActivity extends AppCompatActivity {
                         countDownTimer.cancel();
                     }
                 }
-
             }
         } else if(b.checkEnd() == 0) {
             Toast.makeText(MainActivity.this, R.string.restart, Toast.LENGTH_SHORT).show();
         }
 
+    }
+
+    public void aiAction(int row, int col) {
+        if(b.checkEnd() != 0 && HasPossibleMove()) {
+            if(b.chkSlot(row, col)) {
+                // Flip chess
+                b.flip(row, col);
+                b.placeChess(row, col);
+                if (b.getCurrentPlayer().getColor() == COLOR.WHITE) {
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            printBoard();
+
+                            // Change turn and check if the next player has possible move
+                            if (b.checkEnd() != 0) {
+                                b.nextTurn();
+                                buttonChange(current);
+
+                                if (!HasPossibleMove()) {
+                                    Toast.makeText(MainActivity.this, R.string.no_move, Toast.LENGTH_LONG).show();
+                                    b.nextTurn();
+                                    buttonChange(current);
+                                    showPossibleMove();
+                                    if (!HasPossibleMove()) {
+                                        showWinMessage();
+                                        countDownTimer.cancel();
+                                    }
+                                }
+                            }
+
+                            // Show win message for the last play
+                            if (b.checkEnd() == 0) {
+                                showWinMessage();
+                                countDownTimer.cancel();
+
+                            }
+                            showPossibleMove();
+                        }
+                    }, fullLatency);
+                }
+            }
+        } else if(b.checkEnd() == 0) {
+            Toast.makeText(MainActivity.this, R.string.restart, Toast.LENGTH_SHORT).show();
+        }
     }
 
     public void buttonChange(ImageView img_button) {
